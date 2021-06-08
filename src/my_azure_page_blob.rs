@@ -1,7 +1,7 @@
 use my_azure_storage::{
-    blob::api::BlobApi,
+    blob::BlobApi,
     blob_container::BlobContainersApi,
-    page_blob::{api::PageBlobApi, consts::BLOB_PAGE_SIZE},
+    page_blob::{consts::BLOB_PAGE_SIZE, PageBlobApi},
     AzureConnection, AzureStorageError,
 };
 
