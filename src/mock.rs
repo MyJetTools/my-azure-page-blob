@@ -9,25 +9,14 @@ pub struct MyPageBlobMock {
     pub pages: Vec<[u8; BLOB_PAGE_SIZE]>,
     pub container_created: bool,
     pub blob_created: bool,
-    auto_create_container_on_write: bool,
-    auto_create_blob_on_write_pages_amount: Option<usize>,
-    container_exists: bool,
-    blob_exists: bool,
 }
 
 impl MyPageBlobMock {
-    pub fn new(
-        auto_create_container_on_write: bool,
-        auto_create_blob_on_write_pages_amount: Option<usize>,
-    ) -> Self {
+    pub fn new() -> Self {
         Self {
             pages: Vec::new(),
             container_created: false,
             blob_created: false,
-            auto_create_container_on_write,
-            auto_create_blob_on_write_pages_amount,
-            container_exists: false,
-            blob_exists: false,
         }
     }
 
@@ -149,18 +138,6 @@ impl MyPageBlob for MyPageBlobMock {
         payload: Vec<u8>,
     ) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
-
-        if self.auto_create_container_on_write && !self.container_exists {
-            self.create_container_if_not_exist().await?;
-            self.container_exists = true;
-        }
-
-        if let Some(pages_amount) = self.auto_create_blob_on_write_pages_amount {
-            if !self.blob_exists {
-                self.create_if_not_exists(pages_amount).await?;
-            }
-            self.blob_exists = true;
-        }
 
         let pages_amount = payload.len() / BLOB_PAGE_SIZE;
         let mut page_index = start_page_no;
