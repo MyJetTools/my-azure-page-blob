@@ -126,14 +126,6 @@ impl MyPageBlob for MyAzurePageBlob {
         start_page_no: usize,
         payload: Vec<u8>,
     ) -> Result<(), AzureStorageError> {
-        let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
-
-        let available_pages_amount = self.get_available_pages_amount().await?;
-
-        if pages_amount_after_append > available_pages_amount {
-            return Err(AzureStorageError::UnknownError {msg : format!("Can not save pages. Requires blob with the pages amount: {}. Available pages amount is: {}", pages_amount_after_append, available_pages_amount)});
-        }
-
         if self.auto_create_container_on_write && !self.container_exists {
             self.connection
                 .create_container_if_not_exist(&self.container_name.as_str())
@@ -153,6 +145,14 @@ impl MyPageBlob for MyAzurePageBlob {
             }
 
             self.blob_exists = true;
+        }
+
+        let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
+
+        let available_pages_amount = self.get_available_pages_amount().await?;
+
+        if pages_amount_after_append > available_pages_amount {
+            return Err(AzureStorageError::UnknownError {msg : format!("Can not save pages. Requires blob with the pages amount: {}. Available pages amount is: {}", pages_amount_after_append, available_pages_amount)});
         }
 
         return self
