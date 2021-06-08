@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use my_azure_storage::{page_blob::consts::BLOB_PAGE_SIZE, AzureStorageError};
+use my_azure_storage_sdk::{page_blob::consts::BLOB_PAGE_SIZE, AzureStorageError};
 
 use super::{
     my_azure_page_blob::{get_pages_amount_after_append, get_ressize_to_pages_amount},
@@ -54,10 +54,7 @@ impl MyPageBlob for MyPageBlobMock {
         return "Mock_BLOB";
     }
 
-    async fn create(
-        &mut self,
-        pages_amount: usize,
-    ) -> Result<(), my_azure_storage::AzureStorageError> {
+    async fn create(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
         self.check_if_container_exists()?;
         self.blob_created = true;
 
@@ -67,10 +64,7 @@ impl MyPageBlob for MyPageBlobMock {
         Ok(())
     }
 
-    async fn create_if_not_exists(
-        &mut self,
-        pages_amount: usize,
-    ) -> Result<(), my_azure_storage::AzureStorageError> {
+    async fn create_if_not_exists(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
         self.check_if_container_exists()?;
 
         self.blob_created = true;
@@ -81,24 +75,17 @@ impl MyPageBlob for MyPageBlobMock {
         Ok(())
     }
 
-    async fn get_available_pages_amount(
-        &mut self,
-    ) -> Result<usize, my_azure_storage::AzureStorageError> {
+    async fn get_available_pages_amount(&mut self) -> Result<usize, AzureStorageError> {
         self.check_if_blob_exists()?;
         Ok(self.pages.len())
     }
 
-    async fn create_container_if_not_exist(
-        &mut self,
-    ) -> Result<(), my_azure_storage::AzureStorageError> {
+    async fn create_container_if_not_exist(&mut self) -> Result<(), AzureStorageError> {
         self.container_created = true;
         Ok(())
     }
 
-    async fn resize(
-        &mut self,
-        pages_amount: usize,
-    ) -> Result<(), my_azure_storage::AzureStorageError> {
+    async fn resize(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
 
         while self.pages.len() < pages_amount {
@@ -112,14 +99,14 @@ impl MyPageBlob for MyPageBlobMock {
         Ok(())
     }
 
-    async fn delete(&mut self) -> Result<(), my_azure_storage::AzureStorageError> {
+    async fn delete(&mut self) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
 
         self.blob_created = false;
         return Ok(());
     }
 
-    async fn delete_if_exists(&mut self) -> Result<(), my_azure_storage::AzureStorageError> {
+    async fn delete_if_exists(&mut self) -> Result<(), AzureStorageError> {
         self.blob_created = false;
         self.pages.clear();
         return Ok(());
@@ -129,7 +116,7 @@ impl MyPageBlob for MyPageBlobMock {
         &mut self,
         start_page_no: usize,
         pages_amount: usize,
-    ) -> Result<Vec<u8>, my_azure_storage::AzureStorageError> {
+    ) -> Result<Vec<u8>, AzureStorageError> {
         self.check_if_blob_exists()?;
 
         let mut result = Vec::new();
@@ -149,7 +136,7 @@ impl MyPageBlob for MyPageBlobMock {
         &mut self,
         start_page_no: usize,
         payload: Vec<u8>,
-    ) -> Result<(), my_azure_storage::AzureStorageError> {
+    ) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
 
         let pages_amount = payload.len() / BLOB_PAGE_SIZE;
@@ -176,7 +163,7 @@ impl MyPageBlob for MyPageBlobMock {
         start_page_no: usize,
         payload: Vec<u8>,
         resize_pages_ration: usize,
-    ) -> Result<(), my_azure_storage::AzureStorageError> {
+    ) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
 
@@ -189,7 +176,7 @@ impl MyPageBlob for MyPageBlobMock {
         return self.save_pages(start_page_no, payload).await;
     }
 
-    async fn download(&mut self) -> Result<Vec<u8>, my_azure_storage::AzureStorageError> {
+    async fn download(&mut self) -> Result<Vec<u8>, AzureStorageError> {
         self.check_if_blob_exists()?;
         return self.get(0, self.pages.len()).await;
     }

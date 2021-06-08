@@ -1,4 +1,4 @@
-use my_azure_storage::{
+use my_azure_storage_sdk::{
     blob::BlobApi,
     blob_container::BlobContainersApi,
     page_blob::{consts::BLOB_PAGE_SIZE, PageBlobApi},
@@ -98,7 +98,7 @@ impl MyPageBlob for MyAzurePageBlob {
         pages_amount: usize,
     ) -> Result<Vec<u8>, AzureStorageError> {
         self.connection
-            .get(
+            .get_pages(
                 self.container_name.as_str(),
                 self.blob_name.as_str(),
                 start_page_no,

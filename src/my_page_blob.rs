@@ -1,4 +1,4 @@
-use my_azure_storage::AzureStorageError;
+use my_azure_storage_sdk::AzureStorageError;
 
 use async_trait::async_trait;
 
