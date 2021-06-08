@@ -14,15 +14,29 @@ pub struct MyAzurePageBlob {
     pub blob_name: String,
     pages_available: Option<usize>,
     connection: AzureConnection,
+    auto_create_container_on_write: bool,
+    auto_create_blob_on_write_pages_amount: Option<usize>,
+    container_exists: bool,
+    blob_exists: bool,
 }
 
 impl MyAzurePageBlob {
-    pub fn new(connection: AzureConnection, container_name: String, blob_name: String) -> Self {
+    pub fn new(
+        connection: AzureConnection,
+        container_name: String,
+        blob_name: String,
+        auto_create_container_on_write: bool,
+        auto_create_blob_on_write_pages_amount: Option<usize>,
+    ) -> Self {
         Self {
             container_name: container_name,
             blob_name: blob_name,
             pages_available: None,
             connection,
+            auto_create_container_on_write,
+            auto_create_blob_on_write_pages_amount,
+            container_exists: false,
+            blob_exists: false,
         }
     }
 
@@ -120,16 +134,36 @@ impl MyPageBlob for MyAzurePageBlob {
             return Err(AzureStorageError::UnknownError {msg : format!("Can not save pages. Requires blob with the pages amount: {}. Available pages amount is: {}", pages_amount_after_append, available_pages_amount)});
         }
 
-        self.connection
+        if self.auto_create_container_on_write && !self.container_exists {
+            self.connection
+                .create_container_if_not_exist(&self.container_name.as_str())
+                .await?;
+            self.container_exists = true;
+        }
+
+        if let Some(pages_amount) = self.auto_create_blob_on_write_pages_amount {
+            if !self.blob_exists {
+                self.connection
+                    .create_page_blob_if_not_exists(
+                        &self.container_name.as_str(),
+                        &self.blob_name.as_str(),
+                        pages_amount,
+                    )
+                    .await?;
+            }
+
+            self.blob_exists = true;
+        }
+
+        return self
+            .connection
             .save_pages(
                 self.container_name.as_str(),
                 self.blob_name.as_str(),
                 start_page_no,
                 payload,
             )
-            .await?;
-
-        Ok(())
+            .await;
     }
 
     async fn resize(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
