@@ -1,5 +1,7 @@
 use my_azure_storage::{
-    my_azure_storage::blobs::page_blob::{PageBlob, BLOB_PAGE_SIZE},
+    blob::api::BlobApi,
+    blob_container::BlobContainersApi,
+    page_blob::{api::PageBlobApi, consts::BLOB_PAGE_SIZE},
     AzureConnection, AzureStorageError,
 };
 
@@ -11,27 +13,23 @@ pub struct MyAzurePageBlob {
     pub container_name: String,
     pub blob_name: String,
     pages_available: Option<usize>,
-    page_blob: PageBlob,
+    connection: AzureConnection,
 }
 
 impl MyAzurePageBlob {
-    pub fn new(
-        azure_connection: AzureConnection,
-        container_name: String,
-        blob_name: String,
-    ) -> Self {
+    pub fn new(connection: AzureConnection, container_name: String, blob_name: String) -> Self {
         Self {
             container_name: container_name,
             blob_name: blob_name,
             pages_available: None,
-            page_blob: PageBlob::new(azure_connection),
+            connection,
         }
     }
 
     async fn read_blob_size(&mut self) -> Result<usize, AzureStorageError> {
         let props = self
-            .page_blob
-            .get_properties(self.container_name.as_str(), self.blob_name.as_str())
+            .connection
+            .get_blob_properties(self.container_name.as_str(), self.blob_name.as_str())
             .await?;
 
         let result = props.blob_size / BLOB_PAGE_SIZE;
@@ -51,8 +49,7 @@ impl MyPageBlob for MyAzurePageBlob {
         return self.container_name.as_str();
     }
     async fn create_container_if_not_exist(&mut self) -> Result<(), AzureStorageError> {
-        self.page_blob
-            .connection
+        self.connection
             .create_container_if_not_exist(self.container_name.as_str())
             .await
     }
@@ -70,8 +67,8 @@ impl MyPageBlob for MyAzurePageBlob {
     }
 
     async fn create(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
-        self.page_blob
-            .create(self.container_name.as_str(), &self.blob_name, pages_amount)
+        self.connection
+            .create_page_blob(self.container_name.as_str(), &self.blob_name, pages_amount)
             .await?;
 
         self.pages_available = Some(pages_amount);
@@ -81,8 +78,12 @@ impl MyPageBlob for MyAzurePageBlob {
 
     async fn create_if_not_exists(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
         let props = self
-            .page_blob
-            .create_if_not_exists(self.container_name.as_str(), &self.blob_name, pages_amount)
+            .connection
+            .create_page_blob_if_not_exists(
+                self.container_name.as_str(),
+                &self.blob_name,
+                pages_amount,
+            )
             .await?;
 
         let result = props.blob_size / BLOB_PAGE_SIZE;
@@ -96,7 +97,7 @@ impl MyPageBlob for MyAzurePageBlob {
         start_page_no: usize,
         pages_amount: usize,
     ) -> Result<Vec<u8>, AzureStorageError> {
-        self.page_blob
+        self.connection
             .get(
                 self.container_name.as_str(),
                 self.blob_name.as_str(),
@@ -119,7 +120,7 @@ impl MyPageBlob for MyAzurePageBlob {
             return Err(AzureStorageError::UnknownError {msg : format!("Can not save pages. Requires blob with the pages amount: {}. Available pages amount is: {}", pages_amount_after_append, available_pages_amount)});
         }
 
-        self.page_blob
+        self.connection
             .save_pages(
                 self.container_name.as_str(),
                 self.blob_name.as_str(),
@@ -132,8 +133,8 @@ impl MyPageBlob for MyAzurePageBlob {
     }
 
     async fn resize(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
-        self.page_blob
-            .resize_blob_size(
+        self.connection
+            .resize_page_blob(
                 self.container_name.as_str(),
                 self.blob_name.as_str(),
                 pages_amount,
@@ -157,7 +158,7 @@ impl MyPageBlob for MyAzurePageBlob {
             self.resize(pages_amount_needes).await?;
         }
 
-        self.page_blob
+        self.connection
             .save_pages(
                 self.container_name.as_str(),
                 self.blob_name.as_str(),
@@ -170,8 +171,8 @@ impl MyPageBlob for MyAzurePageBlob {
     }
 
     async fn delete(&mut self) -> Result<(), AzureStorageError> {
-        self.page_blob
-            .delete(self.container_name.as_str(), self.blob_name.as_str())
+        self.connection
+            .delete_blob(self.container_name.as_str(), self.blob_name.as_str())
             .await?;
 
         self.pages_available = None;
@@ -179,8 +180,8 @@ impl MyPageBlob for MyAzurePageBlob {
     }
 
     async fn delete_if_exists(&mut self) -> Result<(), AzureStorageError> {
-        self.page_blob
-            .delete_if_exists(self.container_name.as_str(), self.blob_name.as_str())
+        self.connection
+            .delete_blob_if_exists(self.container_name.as_str(), self.blob_name.as_str())
             .await?;
 
         self.pages_available = None;
@@ -188,8 +189,8 @@ impl MyPageBlob for MyAzurePageBlob {
     }
 
     async fn download(&mut self) -> Result<Vec<u8>, AzureStorageError> {
-        self.page_blob
-            .download(self.container_name.as_str(), self.blob_name.as_ref())
+        self.connection
+            .download_blob(self.container_name.as_str(), self.blob_name.as_ref())
             .await
     }
 }

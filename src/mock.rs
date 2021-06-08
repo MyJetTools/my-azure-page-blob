@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use my_azure_storage::{my_azure_storage::blobs::page_blob::BLOB_PAGE_SIZE, AzureStorageError};
+use my_azure_storage::{page_blob::consts::BLOB_PAGE_SIZE, AzureStorageError};
 
 use super::{
     my_azure_page_blob::{get_pages_amount_after_append, get_ressize_to_pages_amount},
