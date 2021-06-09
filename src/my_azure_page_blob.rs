@@ -210,8 +210,14 @@ pub fn get_ressize_to_pages_amount(pages_amount_needs: usize, pages_resize_ratio
     return full_pages_amount * pages_resize_ratio;
 }
 
+fn get_full_pages_size(len: usize) -> usize {
+    let pages = (len - 1) / BLOB_PAGE_SIZE;
+
+    (pages + 1) * BLOB_PAGE_SIZE
+}
+
 pub fn ressize_payload_to_fullpage(payload: &mut Vec<u8>) {
-    let mut remains_to_resize = payload.len() % BLOB_PAGE_SIZE;
+    let mut remains_to_resize = get_full_pages_size(payload.len()) - payload.len();
 
     while remains_to_resize > 0 {
         payload.push(0);
@@ -222,6 +228,25 @@ pub fn ressize_payload_to_fullpage(payload: &mut Vec<u8>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn get_full_page_ressize() {
+        assert_eq!(512, get_full_pages_size(1));
+        assert_eq!(512, get_full_pages_size(512));
+        assert_eq!(1024, get_full_pages_size(513));
+        assert_eq!(1024, get_full_pages_size(1024));
+    }
+
+    #[test]
+    fn test_ressize_payload_to_full_page() {
+        let mut payload: Vec<u8> = Vec::new();
+
+        payload.push(1);
+
+        ressize_payload_to_fullpage(&mut payload);
+
+        assert_eq!(BLOB_PAGE_SIZE, payload.len());
+    }
 
     #[test]
     fn test_get_pages_amount_after_append() {
