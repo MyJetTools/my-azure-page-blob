@@ -158,6 +158,7 @@ impl MyPageBlob for MyAzurePageBlob {
         if pages_amount_after_append > available_pages_amount {
             let pages_amount_needes =
                 get_ressize_to_pages_amount(pages_amount_after_append, resize_pages_ration);
+            println!("Pages amount need: {}", pages_amount_needes);
             self.resize(pages_amount_needes).await?;
         }
 
@@ -221,6 +222,11 @@ pub fn ressize_payload_to_fullpage(payload: &mut Vec<u8>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_get_pages_amount_after_append() {
+        assert_eq!(3, get_pages_amount_after_append(2, 512));
+    }
 
     #[test]
     fn test_new_blob_size_in_pages_by_2() {
