@@ -110,8 +110,10 @@ impl MyPageBlob for MyAzurePageBlob {
     async fn save_pages(
         &mut self,
         start_page_no: usize,
-        payload: Vec<u8>,
+        mut payload: Vec<u8>,
     ) -> Result<(), AzureStorageError> {
+        ressize_payload_to_fullpage(&mut payload);
+
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
 
         let available_pages_amount = self.get_available_pages_amount().await?;
@@ -144,9 +146,11 @@ impl MyPageBlob for MyAzurePageBlob {
     async fn auto_ressize_and_save_pages(
         &mut self,
         start_page_no: usize,
-        payload: Vec<u8>,
+        mut payload: Vec<u8>,
         resize_pages_ration: usize,
     ) -> Result<(), AzureStorageError> {
+        ressize_payload_to_fullpage(&mut payload);
+
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
 
         let available_pages_amount = self.get_available_pages_amount().await?;
@@ -203,6 +207,15 @@ pub fn get_ressize_to_pages_amount(pages_amount_needs: usize, pages_resize_ratio
     let full_pages_amount = (pages_amount_needs - 1) / pages_resize_ratio + 1;
 
     return full_pages_amount * pages_resize_ratio;
+}
+
+pub fn ressize_payload_to_fullpage(payload: &mut Vec<u8>) {
+    let mut remains_to_resize = payload.len() % BLOB_PAGE_SIZE;
+
+    while remains_to_resize > 0 {
+        payload.push(0);
+        remains_to_resize -= 1;
+    }
 }
 
 #[cfg(test)]

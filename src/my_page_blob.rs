@@ -27,13 +27,13 @@ pub trait MyPageBlob {
     async fn save_pages(
         &mut self,
         start_page_no: usize,
-        payload: Vec<u8>,
+        mut payload: Vec<u8>,
     ) -> Result<(), AzureStorageError>;
 
     async fn auto_ressize_and_save_pages(
         &mut self,
         start_page_no: usize,
-        payload: Vec<u8>,
+        mut payload: Vec<u8>,
         resize_pages_ration: usize,
     ) -> Result<(), AzureStorageError>;
 

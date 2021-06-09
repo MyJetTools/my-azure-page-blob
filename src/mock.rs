@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use my_azure_storage_sdk::{page_blob::consts::BLOB_PAGE_SIZE, AzureStorageError};
 
+use crate::my_azure_page_blob::ressize_payload_to_fullpage;
+
 use super::{
     my_azure_page_blob::{get_pages_amount_after_append, get_ressize_to_pages_amount},
     MyPageBlob,
@@ -135,9 +137,10 @@ impl MyPageBlob for MyPageBlobMock {
     async fn save_pages(
         &mut self,
         start_page_no: usize,
-        payload: Vec<u8>,
+        mut payload: Vec<u8>,
     ) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
+        ressize_payload_to_fullpage(&mut payload);
 
         let pages_amount = payload.len() / BLOB_PAGE_SIZE;
         let mut page_index = start_page_no;
@@ -161,10 +164,11 @@ impl MyPageBlob for MyPageBlobMock {
     async fn auto_ressize_and_save_pages(
         &mut self,
         start_page_no: usize,
-        payload: Vec<u8>,
+        mut payload: Vec<u8>,
         resize_pages_ration: usize,
     ) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
+        ressize_payload_to_fullpage(&mut payload);
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
 
         if pages_amount_after_append > self.pages.len() {
