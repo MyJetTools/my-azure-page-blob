@@ -152,6 +152,7 @@ impl MyPageBlob for MyAzurePageBlob {
         ressize_payload_to_fullpage(&mut payload);
 
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
+        println!("Pages after append: {}", pages_amount_after_append);
 
         let available_pages_amount = self.get_available_pages_amount().await?;
 
