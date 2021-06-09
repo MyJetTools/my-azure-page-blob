@@ -169,14 +169,11 @@ impl MyPageBlob for MyPageBlobMock {
     ) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
         ressize_payload_to_fullpage(&mut payload);
-        println!("Payload size: {}", payload.len());
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
-        println!("Pages after append: {}", pages_amount_after_append);
         if pages_amount_after_append > self.pages.len() {
             let pages_amount_needes =
                 get_ressize_to_pages_amount(pages_amount_after_append, resize_pages_ration);
 
-            println!("Pages needs: {}", pages_amount_needes);
             self.resize(pages_amount_needes).await?;
         }
 
