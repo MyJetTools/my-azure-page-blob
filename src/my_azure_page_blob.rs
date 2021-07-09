@@ -9,6 +9,8 @@ use async_trait::async_trait;
 
 use super::MyPageBlob;
 
+const MAX_WRITE_CHUNK_SIZE: usize = 1024 * 1024 * 4;
+
 pub struct MyAzurePageBlob {
     pub container_name: String,
     pub blob_name: String,
@@ -122,15 +124,49 @@ impl MyPageBlob for MyAzurePageBlob {
             return Err(AzureStorageError::UnknownError {msg : format!("Can not save pages. Requires blob with the pages amount: {}. Available pages amount is: {}", pages_amount_after_append, available_pages_amount)});
         }
 
-        return self
-            .connection
-            .save_pages(
-                self.container_name.as_str(),
-                self.blob_name.as_str(),
-                start_page_no,
-                payload,
-            )
-            .await;
+        if payload.len() <= MAX_WRITE_CHUNK_SIZE {
+            self.connection
+                .save_pages(
+                    self.container_name.as_str(),
+                    self.blob_name.as_str(),
+                    start_page_no,
+                    payload,
+                )
+                .await?;
+
+            return Ok(());
+        }
+
+        let mut remains_len = payload.len();
+        let mut pos = 0;
+        let mut start_page_no = start_page_no;
+
+        while remains_len > 0 {
+            let mut write_size = remains_len;
+
+            if write_size > MAX_WRITE_CHUNK_SIZE {
+                write_size = MAX_WRITE_CHUNK_SIZE;
+            }
+
+            let mut chunk = Vec::with_capacity(write_size);
+
+            chunk.extend(&payload[pos..pos + write_size]);
+
+            self.connection
+                .save_pages(
+                    self.container_name.as_str(),
+                    self.blob_name.as_str(),
+                    start_page_no,
+                    chunk.to_vec(),
+                )
+                .await?;
+
+            pos += write_size;
+            remains_len -= write_size;
+            start_page_no += write_size / BLOB_PAGE_SIZE;
+        }
+
+        Ok(())
     }
 
     async fn resize(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
