@@ -137,6 +137,7 @@ impl MyPageBlob for MyPageBlobMock {
     async fn save_pages(
         &mut self,
         start_page_no: usize,
+        _max_pages_to_write: usize,
         mut payload: Vec<u8>,
     ) -> Result<(), AzureStorageError> {
         self.check_if_blob_exists()?;
@@ -177,7 +178,7 @@ impl MyPageBlob for MyPageBlobMock {
             self.resize(pages_amount_needes).await?;
         }
 
-        return self.save_pages(start_page_no, payload).await;
+        return self.save_pages(start_page_no, 8000, payload).await;
     }
 
     async fn download(&mut self) -> Result<Vec<u8>, AzureStorageError> {

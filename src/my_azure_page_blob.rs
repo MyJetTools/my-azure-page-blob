@@ -9,8 +9,6 @@ use async_trait::async_trait;
 
 use super::MyPageBlob;
 
-const MAX_WRITE_CHUNK_SIZE: usize = 1024 * 1024 * 4;
-
 pub struct MyAzurePageBlob {
     pub container_name: String,
     pub blob_name: String,
@@ -112,8 +110,11 @@ impl MyPageBlob for MyAzurePageBlob {
     async fn save_pages(
         &mut self,
         start_page_no: usize,
+        max_pages_to_write: usize,
         mut payload: Vec<u8>,
     ) -> Result<(), AzureStorageError> {
+        let max_write_chunk = BLOB_PAGE_SIZE * max_pages_to_write;
+
         ressize_payload_to_fullpage(&mut payload);
 
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
@@ -124,7 +125,7 @@ impl MyPageBlob for MyAzurePageBlob {
             return Err(AzureStorageError::UnknownError {msg : format!("Can not save pages. Requires blob with the pages amount: {}. Available pages amount is: {}", pages_amount_after_append, available_pages_amount)});
         }
 
-        if payload.len() <= MAX_WRITE_CHUNK_SIZE {
+        if payload.len() <= max_write_chunk {
             self.connection
                 .save_pages(
                     self.container_name.as_str(),
@@ -144,13 +145,15 @@ impl MyPageBlob for MyAzurePageBlob {
         while remains_len > 0 {
             let mut write_size = remains_len;
 
-            if write_size > MAX_WRITE_CHUNK_SIZE {
-                write_size = MAX_WRITE_CHUNK_SIZE;
+            if write_size > max_write_chunk {
+                write_size = max_write_chunk;
             }
 
             let mut chunk = Vec::with_capacity(write_size);
 
             chunk.extend(&payload[pos..pos + write_size]);
+
+            println!("Debbug: Writing chunk with size {} to blob", chunk.len());
 
             self.connection
                 .save_pages(

@@ -27,6 +27,7 @@ pub trait MyPageBlob {
     async fn save_pages(
         &mut self,
         start_page_no: usize,
+        max_pages_to_write: usize,
         mut payload: Vec<u8>,
     ) -> Result<(), AzureStorageError>;
 
