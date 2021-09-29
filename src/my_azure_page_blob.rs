@@ -153,7 +153,13 @@ impl MyPageBlob for MyAzurePageBlob {
 
             chunk.extend(&payload[pos..pos + write_size]);
 
-            println!("Debbug: Writing chunk with size {} to blob", chunk.len());
+            println!(
+                "Debbug: {}/{} Writing chunk to start page {} with size {} to blob",
+                self.container_name,
+                self.blob_name,
+                start_page_no,
+                chunk.len()
+            );
 
             self.connection
                 .save_pages(
