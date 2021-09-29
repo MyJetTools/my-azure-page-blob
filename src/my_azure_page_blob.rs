@@ -179,7 +179,11 @@ impl MyPageBlob for MyAzurePageBlob {
                 self.blob_name.as_str(),
                 pages_amount,
             )
-            .await
+            .await?;
+
+        self.pages_available = Some(pages_amount);
+
+        Ok(())
     }
 
     async fn auto_ressize_and_save_pages(
