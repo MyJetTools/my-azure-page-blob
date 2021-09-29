@@ -185,6 +185,7 @@ impl MyPageBlob for MyAzurePageBlob {
     async fn auto_ressize_and_save_pages(
         &mut self,
         start_page_no: usize,
+        max_pages_to_write_single_round_trip: usize,
         mut payload: Vec<u8>,
         resize_pages_ration: usize,
     ) -> Result<(), AzureStorageError> {
@@ -201,13 +202,7 @@ impl MyPageBlob for MyAzurePageBlob {
             self.resize(pages_amount_needes).await?;
         }
 
-        self.connection
-            .save_pages(
-                self.container_name.as_str(),
-                self.blob_name.as_str(),
-                start_page_no,
-                payload,
-            )
+        self.save_pages(start_page_no, max_pages_to_write_single_round_trip, payload)
             .await?;
 
         Ok(())
