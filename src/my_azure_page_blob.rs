@@ -199,26 +199,9 @@ impl MyPageBlob for MyAzurePageBlob {
 
         let available_pages_amount = self.get_available_pages_amount().await?;
 
-        if self.container_name.contains("bidask") {
-            println!(
-                "debug: {}/{}. Required size: {}. Current Size: {}",
-                self.container_name,
-                self.blob_name,
-                pages_amount_after_append,
-                available_pages_amount
-            );
-        }
-
         if pages_amount_after_append > available_pages_amount {
             let pages_amount_needes =
                 get_ressize_to_pages_amount(pages_amount_after_append, resize_pages_ration);
-
-            if self.container_name.contains("bidask") {
-                println!(
-                    "debug: {}/{}. Ressizing to {}",
-                    self.container_name, self.blob_name, pages_amount_needes
-                );
-            }
             self.resize(pages_amount_needes).await?;
         }
 
