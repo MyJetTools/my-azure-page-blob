@@ -112,10 +112,12 @@ impl MyPageBlob for MyAzurePageBlob {
         start_page_no: usize,
         max_pages_to_write: usize,
         mut payload: Vec<u8>,
-    ) -> Result<(), AzureStorageError> {
+    ) -> Result<usize, AzureStorageError> {
         let max_write_chunk = BLOB_PAGE_SIZE * max_pages_to_write;
 
         ressize_payload_to_fullpage(&mut payload);
+
+        let result = payload.len();
 
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
 
@@ -135,7 +137,7 @@ impl MyPageBlob for MyAzurePageBlob {
                 )
                 .await?;
 
-            return Ok(());
+            return Ok(result);
         }
 
         let mut remains_len = payload.len();
@@ -175,7 +177,7 @@ impl MyPageBlob for MyAzurePageBlob {
             start_page_no += write_size / BLOB_PAGE_SIZE;
         }
 
-        Ok(())
+        Ok(result)
     }
 
     async fn resize(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
@@ -198,7 +200,7 @@ impl MyPageBlob for MyAzurePageBlob {
         max_pages_to_write_single_round_trip: usize,
         mut payload: Vec<u8>,
         resize_pages_ration: usize,
-    ) -> Result<(), AzureStorageError> {
+    ) -> Result<usize, AzureStorageError> {
         ressize_payload_to_fullpage(&mut payload);
 
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
@@ -211,10 +213,11 @@ impl MyPageBlob for MyAzurePageBlob {
             self.resize(pages_amount_needes).await?;
         }
 
-        self.save_pages(start_page_no, max_pages_to_write_single_round_trip, payload)
+        let result = self
+            .save_pages(start_page_no, max_pages_to_write_single_round_trip, payload)
             .await?;
 
-        Ok(())
+        return Ok(result);
     }
 
     async fn delete(&mut self) -> Result<(), AzureStorageError> {

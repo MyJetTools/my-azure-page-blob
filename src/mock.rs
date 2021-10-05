@@ -139,9 +139,11 @@ impl MyPageBlob for MyPageBlobMock {
         start_page_no: usize,
         _max_pages_to_write: usize,
         mut payload: Vec<u8>,
-    ) -> Result<(), AzureStorageError> {
+    ) -> Result<usize, AzureStorageError> {
         self.check_if_blob_exists()?;
         ressize_payload_to_fullpage(&mut payload);
+
+        let result = payload.len();
 
         let pages_amount = payload.len() / BLOB_PAGE_SIZE;
         let mut page_index = start_page_no;
@@ -159,7 +161,7 @@ impl MyPageBlob for MyPageBlobMock {
             payload_index += BLOB_PAGE_SIZE;
         }
 
-        Ok(())
+        Ok(result)
     }
 
     async fn auto_ressize_and_save_pages(
@@ -168,7 +170,7 @@ impl MyPageBlob for MyPageBlobMock {
         _max_pages_amount_to_write: usize,
         mut payload: Vec<u8>,
         resize_pages_ration: usize,
-    ) -> Result<(), AzureStorageError> {
+    ) -> Result<usize, AzureStorageError> {
         self.check_if_blob_exists()?;
         ressize_payload_to_fullpage(&mut payload);
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
