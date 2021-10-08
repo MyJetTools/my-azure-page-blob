@@ -145,22 +145,20 @@ impl MyPageBlob for MyAzurePageBlob {
         let mut start_page_no = start_page_no;
 
         while remains_len > 0 {
-            let mut write_size = remains_len;
+            let write_amount = if remains_len > max_write_chunk {
+                max_write_chunk
+            } else {
+                remains_len
+            };
 
-            if write_size > max_write_chunk {
-                write_size = max_write_chunk;
-            }
-
-            let mut chunk = Vec::with_capacity(write_size);
-
-            chunk.extend(&payload[pos..pos + write_size]);
+            let payload_to_write = &payload[pos..pos + write_amount];
 
             println!(
-                "Debbug: {}/{} Writing chunk to start page {} with size {} to blob",
+                "Debbug: {}/{} Writing chunk to the page {} with size {} to blob",
                 self.container_name,
                 self.blob_name,
                 start_page_no,
-                chunk.len()
+                payload_to_write.len()
             );
 
             self.connection
@@ -168,13 +166,13 @@ impl MyPageBlob for MyAzurePageBlob {
                     self.container_name.as_str(),
                     self.blob_name.as_str(),
                     start_page_no,
-                    chunk.to_vec(),
+                    payload_to_write.to_vec(),
                 )
                 .await?;
 
-            pos += write_size;
-            remains_len -= write_size;
-            start_page_no += write_size / BLOB_PAGE_SIZE;
+            pos += write_amount;
+            remains_len -= write_amount;
+            start_page_no += write_amount / BLOB_PAGE_SIZE;
         }
 
         Ok(result)
