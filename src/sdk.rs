@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use my_azure_storage_sdk::{
-    page_blob::consts::BLOB_PAGE_SIZE, AzureStorageConnectionInfo, AzureStorageError,
+    blob::BlobProperties, page_blob::consts::BLOB_PAGE_SIZE, AzureStorageConnectionInfo,
+    AzureStorageError,
 };
 use my_telemetry::MyTelemetry;
 
@@ -300,7 +301,7 @@ impl MyAzurePageBlobSdk {
     }
 
     #[inline]
-    pub async fn download<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn download<TMyTelemetry: MyTelemetry>(
         &mut self,
         connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
@@ -309,6 +310,21 @@ impl MyAzurePageBlobSdk {
             connection,
             self.container_name.as_str(),
             self.blob_name.as_str(),
+            my_telemetry,
+        )
+        .await
+    }
+
+    #[inline]
+    pub async fn get_blob_properties<TMyTelemetry: MyTelemetry>(
+        &mut self,
+        connection: &AzureStorageConnectionInfo,
+        my_telemetry: Option<Arc<TMyTelemetry>>,
+    ) -> Result<BlobProperties, AzureStorageError> {
+        my_azure_storage_sdk::blob::sdk::get_blob_properties(
+            connection,
+            self.container_name.as_ref(),
+            self.blob_name.as_ref(),
             my_telemetry,
         )
         .await

@@ -1,4 +1,6 @@
-use my_azure_storage_sdk::{AzureStorageConnectionWithTelemetry, AzureStorageError};
+use my_azure_storage_sdk::{
+    blob::BlobProperties, AzureStorageConnectionWithTelemetry, AzureStorageError,
+};
 
 use async_trait::async_trait;
 use my_telemetry::MyTelemetry;
@@ -167,6 +169,16 @@ impl<TMyTelemetry: MyTelemetry + Send + Sync + 'static> MyPageBlob
         return self
             .sdk
             .download(
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
+            )
+            .await;
+    }
+
+    async fn get_blob_properties(&mut self) -> Result<BlobProperties, AzureStorageError> {
+        return self
+            .sdk
+            .get_blob_properties(
                 self.connection.get_connection_info(),
                 self.connection.get_telemetry(),
             )

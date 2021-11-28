@@ -1,4 +1,4 @@
-use my_azure_storage_sdk::{AzureStorageConnection, AzureStorageError};
+use my_azure_storage_sdk::{blob::BlobProperties, AzureStorageConnection, AzureStorageError};
 
 use async_trait::async_trait;
 use my_telemetry::MyTelemetryToConsole;
@@ -159,6 +159,16 @@ impl MyPageBlob for MyAzurePageBlob {
         return self
             .sdk
             .download::<MyTelemetryToConsole>(self.connection.get_connection_info(), None)
+            .await;
+    }
+
+    async fn get_blob_properties(&mut self) -> Result<BlobProperties, AzureStorageError> {
+        return self
+            .sdk
+            .get_blob_properties::<MyTelemetryToConsole>(
+                self.connection.get_connection_info(),
+                None,
+            )
             .await;
     }
 }

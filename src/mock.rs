@@ -1,5 +1,7 @@
 use async_trait::async_trait;
-use my_azure_storage_sdk::{page_blob::consts::BLOB_PAGE_SIZE, AzureStorageError};
+use my_azure_storage_sdk::{
+    blob::BlobProperties, page_blob::consts::BLOB_PAGE_SIZE, AzureStorageError,
+};
 
 use super::MyPageBlob;
 pub struct MyPageBlobMock {
@@ -185,5 +187,13 @@ impl MyPageBlob for MyPageBlobMock {
     async fn download(&mut self) -> Result<Vec<u8>, AzureStorageError> {
         self.check_if_blob_exists()?;
         return self.get(0, self.pages.len()).await;
+    }
+
+    async fn get_blob_properties(&mut self) -> Result<BlobProperties, AzureStorageError> {
+        let result = BlobProperties {
+            blob_size: self.pages.len() * BLOB_PAGE_SIZE,
+        };
+
+        Ok(result)
     }
 }

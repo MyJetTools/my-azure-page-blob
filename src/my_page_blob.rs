@@ -1,4 +1,4 @@
-use my_azure_storage_sdk::AzureStorageError;
+use my_azure_storage_sdk::{blob::BlobProperties, AzureStorageError};
 
 use async_trait::async_trait;
 
@@ -6,6 +6,8 @@ use async_trait::async_trait;
 pub trait MyPageBlob {
     fn get_container_name(&self) -> &str;
     fn get_blob_name(&self) -> &str;
+
+    async fn get_blob_properties(&mut self) -> Result<BlobProperties, AzureStorageError>;
 
     async fn create(&mut self, pages_amount: usize) -> Result<(), AzureStorageError>;
     async fn create_if_not_exists(&mut self, pages_amount: usize) -> Result<(), AzureStorageError>;
