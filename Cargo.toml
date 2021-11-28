@@ -8,5 +8,7 @@ edition = "2021"
 
 [dependencies]
 my-azure-storage-sdk = { branch = "main", git = "https://github.com/MyJetTools/my-azure-storage.git" }
+my-telemetry = { branch = "main", git = "https://github.com/MyJetTools/my-telemetry.git" }
+
 tokio = { version = "*", features = ["full"] }
 async-trait = "*"
