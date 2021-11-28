@@ -7,13 +7,17 @@ use crate::sdk::MyAzurePageBlobSdk;
 
 use super::MyPageBlob;
 
-pub struct MyAzurePageBlob<TConnection: AzureStorageConnection + Send + Sync + 'static> {
+pub struct MyAzurePageBlob {
     sdk: MyAzurePageBlobSdk,
-    connection: TConnection,
+    connection: AzureStorageConnection,
 }
 
-impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyAzurePageBlob<TConnection> {
-    pub fn new(connection: TConnection, container_name: String, blob_name: String) -> Self {
+impl MyAzurePageBlob {
+    pub fn new(
+        connection: AzureStorageConnection,
+        container_name: String,
+        blob_name: String,
+    ) -> Self {
         Self {
             sdk: MyAzurePageBlobSdk::new(container_name, blob_name),
             connection,
@@ -22,9 +26,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyAzurePageBlo
 }
 
 #[async_trait]
-impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
-    for MyAzurePageBlob<TConnection>
-{
+impl MyPageBlob for MyAzurePageBlob {
     fn get_blob_name(&self) -> &str {
         return self.sdk.blob_name.as_str();
     }
@@ -36,7 +38,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
     async fn resize(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
         self.sdk
             .resize::<MyTelemetryToConsole>(
-                self.connection.get_conneciton_info(),
+                self.connection.get_connection_info(),
                 None,
                 pages_amount,
             )
@@ -47,7 +49,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
         return self
             .sdk
             .create_container_if_not_exist::<MyTelemetryToConsole>(
-                self.connection.get_conneciton_info(),
+                self.connection.get_connection_info(),
                 None,
             )
             .await;
@@ -57,7 +59,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
         return self
             .sdk
             .get_available_pages_amount::<MyTelemetryToConsole>(
-                self.connection.get_conneciton_info(),
+                self.connection.get_connection_info(),
                 None,
             )
             .await;
@@ -67,7 +69,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
         return self
             .sdk
             .create::<MyTelemetryToConsole>(
-                self.connection.get_conneciton_info(),
+                self.connection.get_connection_info(),
                 None,
                 pages_amount,
             )
@@ -78,7 +80,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
         return self
             .sdk
             .create_if_not_exists::<MyTelemetryToConsole>(
-                self.connection.get_conneciton_info(),
+                self.connection.get_connection_info(),
                 None,
                 pages_amount,
             )
@@ -93,7 +95,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
         return self
             .sdk
             .get::<MyTelemetryToConsole>(
-                self.connection.get_conneciton_info(),
+                self.connection.get_connection_info(),
                 None,
                 start_page_no,
                 pages_amount,
@@ -110,7 +112,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
         return self
             .sdk
             .save_pages::<MyTelemetryToConsole>(
-                self.connection.get_conneciton_info(),
+                self.connection.get_connection_info(),
                 None,
                 start_page_no,
                 max_pages_to_write,
@@ -129,7 +131,7 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
         return self
             .sdk
             .auto_ressize_and_save_pages::<MyTelemetryToConsole>(
-                self.connection.get_conneciton_info(),
+                self.connection.get_connection_info(),
                 None,
                 start_page_no,
                 max_pages_to_write_single_round_trip,
@@ -142,21 +144,21 @@ impl<TConnection: AzureStorageConnection + Send + Sync + 'static> MyPageBlob
     async fn delete(&mut self) -> Result<(), AzureStorageError> {
         return self
             .sdk
-            .delete::<MyTelemetryToConsole>(self.connection.get_conneciton_info(), None)
+            .delete::<MyTelemetryToConsole>(self.connection.get_connection_info(), None)
             .await;
     }
 
     async fn delete_if_exists(&mut self) -> Result<(), AzureStorageError> {
         return self
             .sdk
-            .delete_if_exists::<MyTelemetryToConsole>(self.connection.get_conneciton_info(), None)
+            .delete_if_exists::<MyTelemetryToConsole>(self.connection.get_connection_info(), None)
             .await;
     }
 
     async fn download(&mut self) -> Result<Vec<u8>, AzureStorageError> {
         return self
             .sdk
-            .download::<MyTelemetryToConsole>(self.connection.get_conneciton_info(), None)
+            .download::<MyTelemetryToConsole>(self.connection.get_connection_info(), None)
             .await;
     }
 }

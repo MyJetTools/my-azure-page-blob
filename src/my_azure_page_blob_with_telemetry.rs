@@ -1,6 +1,4 @@
-use std::sync::Arc;
-
-use my_azure_storage_sdk::{AzureStorageConnection, AzureStorageError};
+use my_azure_storage_sdk::{AzureStorageConnectionWithTelemetry, AzureStorageError};
 
 use async_trait::async_trait;
 use my_telemetry::MyTelemetry;
@@ -9,35 +7,27 @@ use crate::sdk::MyAzurePageBlobSdk;
 
 use super::MyPageBlob;
 
-pub struct MyAzurePageBlobWithTelemetry<
-    TConnection: AzureStorageConnection + Send + Sync + 'static,
-    TMyTelemetry: MyTelemetry + Send + Sync + 'static,
-> {
+pub struct MyAzurePageBlobWithTelemetry<TMyTelemetry: MyTelemetry + Send + Sync + 'static> {
     sdk: MyAzurePageBlobSdk,
-    connection: TConnection,
-    my_telemetry: Option<Arc<TMyTelemetry>>,
+    connection: AzureStorageConnectionWithTelemetry<TMyTelemetry>,
 }
 
-impl<
-        TConnection: AzureStorageConnection + Send + Sync + 'static,
-        TMyTelemetry: MyTelemetry + Send + Sync + 'static,
-    > MyAzurePageBlobWithTelemetry<TConnection, TMyTelemetry>
-{
-    pub fn new(connection: TConnection, container_name: String, blob_name: String) -> Self {
-        let my_telemetry = connection.get_telemetry();
+impl<TMyTelemetry: MyTelemetry + Send + Sync + 'static> MyAzurePageBlobWithTelemetry<TMyTelemetry> {
+    pub fn new(
+        connection: AzureStorageConnectionWithTelemetry<TMyTelemetry>,
+        container_name: String,
+        blob_name: String,
+    ) -> Self {
         Self {
             sdk: MyAzurePageBlobSdk::new(container_name, blob_name),
             connection,
-            my_telemetry,
         }
     }
 }
 
 #[async_trait]
-impl<
-        TConnection: AzureStorageConnection + Send + Sync + 'static,
-        TMyTelemetry: MyTelemetry + Send + Sync + 'static,
-    > MyPageBlob for MyAzurePageBlobWithTelemetry<TConnection, TMyTelemetry>
+impl<TMyTelemetry: MyTelemetry + Send + Sync + 'static> MyPageBlob
+    for MyAzurePageBlobWithTelemetry<TMyTelemetry>
 {
     fn get_blob_name(&self) -> &str {
         return self.sdk.blob_name.as_str();
@@ -50,8 +40,8 @@ impl<
     async fn resize(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
         self.sdk
             .resize(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
                 pages_amount,
             )
             .await
@@ -61,8 +51,8 @@ impl<
         return self
             .sdk
             .create_container_if_not_exist(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
             )
             .await;
     }
@@ -71,8 +61,8 @@ impl<
         return self
             .sdk
             .get_available_pages_amount(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
             )
             .await;
     }
@@ -81,8 +71,8 @@ impl<
         return self
             .sdk
             .create(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
                 pages_amount,
             )
             .await;
@@ -92,8 +82,8 @@ impl<
         return self
             .sdk
             .create_if_not_exists(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
                 pages_amount,
             )
             .await;
@@ -107,8 +97,8 @@ impl<
         return self
             .sdk
             .get(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
                 start_page_no,
                 pages_amount,
             )
@@ -124,8 +114,8 @@ impl<
         return self
             .sdk
             .save_pages(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
                 start_page_no,
                 max_pages_to_write,
                 payload,
@@ -143,8 +133,8 @@ impl<
         return self
             .sdk
             .auto_ressize_and_save_pages(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
                 start_page_no,
                 max_pages_to_write_single_round_trip,
                 payload,
@@ -157,8 +147,8 @@ impl<
         return self
             .sdk
             .delete(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
             )
             .await;
     }
@@ -167,8 +157,8 @@ impl<
         return self
             .sdk
             .delete_if_exists(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
             )
             .await;
     }
@@ -177,8 +167,8 @@ impl<
         return self
             .sdk
             .download(
-                self.connection.get_conneciton_info(),
-                self.my_telemetry.clone(),
+                self.connection.get_connection_info(),
+                self.connection.get_telemetry(),
             )
             .await;
     }

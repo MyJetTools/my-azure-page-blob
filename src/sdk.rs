@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use my_azure_storage_sdk::{
-    page_blob::consts::BLOB_PAGE_SIZE, AzureConnectionInfo, AzureStorageError,
+    page_blob::consts::BLOB_PAGE_SIZE, AzureStorageConnectionInfo, AzureStorageError,
 };
 use my_telemetry::MyTelemetry;
 
@@ -22,7 +22,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn resize<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
         pages_amount: usize,
     ) -> Result<(), AzureStorageError> {
@@ -42,7 +42,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn create_container_if_not_exist<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
     ) -> Result<(), AzureStorageError> {
         my_azure_storage_sdk::blob_container::sdk::create_container_if_not_exist(
@@ -57,7 +57,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn read_blob_size<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
     ) -> Result<usize, AzureStorageError> {
         let props = my_azure_storage_sdk::blob::sdk::get_blob_properties(
@@ -77,7 +77,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn get_available_pages_amount<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
     ) -> Result<usize, AzureStorageError> {
         match self.pages_available {
@@ -93,7 +93,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn create<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
         pages_amount: usize,
     ) -> Result<(), AzureStorageError> {
@@ -113,7 +113,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn create_if_not_exists<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
         pages_amount: usize,
     ) -> Result<(), AzureStorageError> {
@@ -134,7 +134,7 @@ impl MyAzurePageBlobSdk {
 
     pub async fn get<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
         start_page_no: usize,
         pages_amount: usize,
@@ -152,7 +152,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn save_pages<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
         start_page_no: usize,
         max_pages_to_write: usize,
@@ -229,7 +229,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn auto_ressize_and_save_pages<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
         start_page_no: usize,
         max_pages_to_write_single_round_trip: usize,
@@ -267,7 +267,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn delete<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
     ) -> Result<(), AzureStorageError> {
         my_azure_storage_sdk::blob::sdk::delete_blob(
@@ -284,7 +284,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn delete_if_exists<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
     ) -> Result<(), AzureStorageError> {
         my_azure_storage_sdk::blob::sdk::delete_blob_if_exists(
@@ -302,7 +302,7 @@ impl MyAzurePageBlobSdk {
     #[inline]
     pub async fn download<'s, TMyTelemetry: MyTelemetry>(
         &mut self,
-        connection: &AzureConnectionInfo,
+        connection: &AzureStorageConnectionInfo,
         my_telemetry: Option<Arc<TMyTelemetry>>,
     ) -> Result<Vec<u8>, AzureStorageError> {
         my_azure_storage_sdk::blob::sdk::download_blob(
