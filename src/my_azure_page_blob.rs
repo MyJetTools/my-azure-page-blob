@@ -1,7 +1,6 @@
 use my_azure_storage_sdk::{blob::BlobProperties, AzureStorageConnection, AzureStorageError};
 
 use async_trait::async_trait;
-use my_telemetry::MyTelemetryToConsole;
 
 use crate::sdk::MyAzurePageBlobSdk;
 
@@ -36,54 +35,28 @@ impl MyPageBlob for MyAzurePageBlob {
     }
 
     async fn resize(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
-        self.sdk
-            .resize::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
-                pages_amount,
-            )
-            .await
+        self.sdk.resize(&self.connection, pages_amount).await
     }
 
     async fn create_container_if_not_exist(&mut self) -> Result<(), AzureStorageError> {
         return self
             .sdk
-            .create_container_if_not_exist::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
-            )
+            .create_container_if_not_exist(&self.connection)
             .await;
     }
 
     async fn get_available_pages_amount(&mut self) -> Result<usize, AzureStorageError> {
-        return self
-            .sdk
-            .get_available_pages_amount::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
-            )
-            .await;
+        return self.sdk.get_available_pages_amount(&self.connection).await;
     }
 
     async fn create(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
-        return self
-            .sdk
-            .create::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
-                pages_amount,
-            )
-            .await;
+        return self.sdk.create(&self.connection, pages_amount).await;
     }
 
     async fn create_if_not_exists(&mut self, pages_amount: usize) -> Result<(), AzureStorageError> {
         return self
             .sdk
-            .create_if_not_exists::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
-                pages_amount,
-            )
+            .create_if_not_exists(&self.connection, pages_amount)
             .await;
     }
 
@@ -94,12 +67,7 @@ impl MyPageBlob for MyAzurePageBlob {
     ) -> Result<Vec<u8>, AzureStorageError> {
         return self
             .sdk
-            .get::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
-                start_page_no,
-                pages_amount,
-            )
+            .get(&self.connection, start_page_no, pages_amount)
             .await;
     }
 
@@ -111,13 +79,7 @@ impl MyPageBlob for MyAzurePageBlob {
     ) -> Result<usize, AzureStorageError> {
         return self
             .sdk
-            .save_pages::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
-                start_page_no,
-                max_pages_to_write,
-                payload,
-            )
+            .save_pages(&self.connection, start_page_no, max_pages_to_write, payload)
             .await;
     }
 
@@ -130,9 +92,8 @@ impl MyPageBlob for MyAzurePageBlob {
     ) -> Result<usize, AzureStorageError> {
         return self
             .sdk
-            .auto_ressize_and_save_pages::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
+            .auto_ressize_and_save_pages(
+                &self.connection,
                 start_page_no,
                 max_pages_to_write_single_round_trip,
                 payload,
@@ -142,33 +103,18 @@ impl MyPageBlob for MyAzurePageBlob {
     }
 
     async fn delete(&mut self) -> Result<(), AzureStorageError> {
-        return self
-            .sdk
-            .delete::<MyTelemetryToConsole>(self.connection.get_connection_info(), None)
-            .await;
+        return self.sdk.delete(&self.connection).await;
     }
 
     async fn delete_if_exists(&mut self) -> Result<(), AzureStorageError> {
-        return self
-            .sdk
-            .delete_if_exists::<MyTelemetryToConsole>(self.connection.get_connection_info(), None)
-            .await;
+        return self.sdk.delete_if_exists(&self.connection).await;
     }
 
     async fn download(&mut self) -> Result<Vec<u8>, AzureStorageError> {
-        return self
-            .sdk
-            .download::<MyTelemetryToConsole>(self.connection.get_connection_info(), None)
-            .await;
+        return self.sdk.download(&self.connection).await;
     }
 
     async fn get_blob_properties(&mut self) -> Result<BlobProperties, AzureStorageError> {
-        return self
-            .sdk
-            .get_blob_properties::<MyTelemetryToConsole>(
-                self.connection.get_connection_info(),
-                None,
-            )
-            .await;
+        return self.sdk.get_blob_properties(&self.connection).await;
     }
 }

@@ -1,10 +1,7 @@
-use std::sync::Arc;
-
 use my_azure_storage_sdk::{
-    blob::BlobProperties, page_blob::consts::BLOB_PAGE_SIZE, AzureStorageConnectionInfo,
+    blob::BlobProperties, page_blob::consts::BLOB_PAGE_SIZE, AzureStorageConnection,
     AzureStorageError,
 };
-use my_telemetry::MyTelemetry;
 
 pub struct MyAzurePageBlobSdk {
     pub container_name: String,
@@ -21,10 +18,9 @@ impl MyAzurePageBlobSdk {
         }
     }
     #[inline]
-    pub async fn resize<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn resize(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
         pages_amount: usize,
     ) -> Result<(), AzureStorageError> {
         my_azure_storage_sdk::page_blob::sdk::resize_page_blob(
@@ -32,7 +28,6 @@ impl MyAzurePageBlobSdk {
             self.container_name.as_str(),
             self.blob_name.as_str(),
             pages_amount,
-            my_telemetry,
         )
         .await?;
 
@@ -41,31 +36,27 @@ impl MyAzurePageBlobSdk {
         Ok(())
     }
     #[inline]
-    pub async fn create_container_if_not_exist<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn create_container_if_not_exist(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
     ) -> Result<(), AzureStorageError> {
         my_azure_storage_sdk::blob_container::sdk::create_container_if_not_exist(
             connection,
             self.container_name.as_str(),
-            my_telemetry,
         )
         .await?;
 
         Ok(())
     }
     #[inline]
-    pub async fn read_blob_size<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn read_blob_size(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
     ) -> Result<usize, AzureStorageError> {
         let props = my_azure_storage_sdk::blob::sdk::get_blob_properties(
             &connection,
             self.container_name.as_str(),
             self.blob_name.as_str(),
-            my_telemetry,
         )
         .await?;
 
@@ -76,10 +67,9 @@ impl MyAzurePageBlobSdk {
         return Ok(result);
     }
     #[inline]
-    pub async fn get_available_pages_amount<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn get_available_pages_amount(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
     ) -> Result<usize, AzureStorageError> {
         match self.pages_available {
             Some(result) => {
@@ -87,15 +77,14 @@ impl MyAzurePageBlobSdk {
             }
 
             None => {
-                return self.read_blob_size(connection, my_telemetry).await;
+                return self.read_blob_size(connection).await;
             }
         }
     }
     #[inline]
-    pub async fn create<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn create(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
         pages_amount: usize,
     ) -> Result<(), AzureStorageError> {
         my_azure_storage_sdk::page_blob::sdk::create_page_blob(
@@ -103,7 +92,6 @@ impl MyAzurePageBlobSdk {
             self.container_name.as_str(),
             &self.blob_name,
             pages_amount,
-            my_telemetry,
         )
         .await?;
 
@@ -112,10 +100,9 @@ impl MyAzurePageBlobSdk {
         return Ok(());
     }
     #[inline]
-    pub async fn create_if_not_exists<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn create_if_not_exists(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
         pages_amount: usize,
     ) -> Result<(), AzureStorageError> {
         let props = my_azure_storage_sdk::page_blob::sdk::create_page_blob_if_not_exists(
@@ -123,7 +110,6 @@ impl MyAzurePageBlobSdk {
             self.container_name.as_str(),
             &self.blob_name,
             pages_amount,
-            my_telemetry,
         )
         .await?;
 
@@ -133,10 +119,10 @@ impl MyAzurePageBlobSdk {
         return Ok(());
     }
 
-    pub async fn get<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn get(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
+
         start_page_no: usize,
         pages_amount: usize,
     ) -> Result<Vec<u8>, AzureStorageError> {
@@ -146,15 +132,13 @@ impl MyAzurePageBlobSdk {
             self.blob_name.as_str(),
             start_page_no,
             pages_amount,
-            my_telemetry,
         )
         .await
     }
     #[inline]
-    pub async fn save_pages<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn save_pages(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
         start_page_no: usize,
         max_pages_to_write: usize,
         mut payload: Vec<u8>,
@@ -167,9 +151,7 @@ impl MyAzurePageBlobSdk {
 
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
 
-        let available_pages_amount = self
-            .get_available_pages_amount(connection, my_telemetry.clone())
-            .await?;
+        let available_pages_amount = self.get_available_pages_amount(connection).await?;
 
         if pages_amount_after_append > available_pages_amount {
             return Err(AzureStorageError::UnknownError {msg : format!("Can not save pages. Requires blob with the pages amount: {}. Available pages amount is: {}", pages_amount_after_append, available_pages_amount)});
@@ -182,7 +164,6 @@ impl MyAzurePageBlobSdk {
                 self.blob_name.as_str(),
                 start_page_no,
                 payload,
-                my_telemetry,
             )
             .await?;
 
@@ -216,7 +197,6 @@ impl MyAzurePageBlobSdk {
                 self.blob_name.as_str(),
                 start_page_no,
                 payload_to_write.to_vec(),
-                my_telemetry.clone(),
             )
             .await?;
 
@@ -228,10 +208,9 @@ impl MyAzurePageBlobSdk {
         Ok(result)
     }
     #[inline]
-    pub async fn auto_ressize_and_save_pages<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn auto_ressize_and_save_pages(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
         start_page_no: usize,
         max_pages_to_write_single_round_trip: usize,
         mut payload: Vec<u8>,
@@ -241,22 +220,18 @@ impl MyAzurePageBlobSdk {
 
         let pages_amount_after_append = get_pages_amount_after_append(start_page_no, payload.len());
 
-        let available_pages_amount = self
-            .get_available_pages_amount(connection, my_telemetry.clone())
-            .await?;
+        let available_pages_amount = self.get_available_pages_amount(connection).await?;
 
         if pages_amount_after_append > available_pages_amount {
             let pages_amount_needes =
                 get_ressize_to_pages_amount(pages_amount_after_append, resize_pages_ration);
 
-            self.resize(connection, my_telemetry.clone(), pages_amount_needes)
-                .await?;
+            self.resize(connection, pages_amount_needes).await?;
         }
 
         let result = self
             .save_pages(
                 connection,
-                my_telemetry.clone(),
                 start_page_no,
                 max_pages_to_write_single_round_trip,
                 payload,
@@ -266,16 +241,14 @@ impl MyAzurePageBlobSdk {
         return Ok(result);
     }
     #[inline]
-    pub async fn delete<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn delete(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
     ) -> Result<(), AzureStorageError> {
         my_azure_storage_sdk::blob::sdk::delete_blob(
             connection,
             self.container_name.as_str(),
             self.blob_name.as_str(),
-            my_telemetry,
         )
         .await?;
 
@@ -283,16 +256,14 @@ impl MyAzurePageBlobSdk {
         Ok(())
     }
     #[inline]
-    pub async fn delete_if_exists<'s, TMyTelemetry: MyTelemetry>(
+    pub async fn delete_if_exists(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
     ) -> Result<(), AzureStorageError> {
         my_azure_storage_sdk::blob::sdk::delete_blob_if_exists(
             connection,
             self.container_name.as_str(),
             self.blob_name.as_str(),
-            my_telemetry,
         )
         .await?;
 
@@ -301,31 +272,27 @@ impl MyAzurePageBlobSdk {
     }
 
     #[inline]
-    pub async fn download<TMyTelemetry: MyTelemetry>(
+    pub async fn download(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
     ) -> Result<Vec<u8>, AzureStorageError> {
         my_azure_storage_sdk::blob::sdk::download_blob(
             connection,
             self.container_name.as_str(),
             self.blob_name.as_str(),
-            my_telemetry,
         )
         .await
     }
 
     #[inline]
-    pub async fn get_blob_properties<TMyTelemetry: MyTelemetry>(
+    pub async fn get_blob_properties(
         &mut self,
-        connection: &AzureStorageConnectionInfo,
-        my_telemetry: Option<Arc<TMyTelemetry>>,
+        connection: &AzureStorageConnection,
     ) -> Result<BlobProperties, AzureStorageError> {
         my_azure_storage_sdk::blob::sdk::get_blob_properties(
             connection,
             self.container_name.as_ref(),
             self.blob_name.as_ref(),
-            my_telemetry,
         )
         .await
     }
