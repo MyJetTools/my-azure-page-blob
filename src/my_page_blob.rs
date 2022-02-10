@@ -29,7 +29,7 @@ pub trait MyPageBlob {
     async fn save_pages(
         &self,
         start_page_no: usize,
-        mut payload: Vec<u8>,
+        payload: Vec<u8>,
     ) -> Result<(), AzureStorageError>;
 
     async fn download(&self) -> Result<Vec<u8>, AzureStorageError>;
